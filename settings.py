@@ -11,11 +11,11 @@ game_settings = {
 
     "codeLength": 5,              # length of the code to guess
 
-    "numberOfColours": 5,         # number of colours (1-6)
+    "numberOfColours": 6,         # number of colours (1-6)
 
-    "maxNumberOfGuesses": 10,     # max. number of guesses per game
+    "maxNumberOfGuesses": 6,     # max. number of guesses per game
 
-    "totalNumberOfGames": 2,    # total number of games played
+    "totalNumberOfGames": 40,    # total number of games played
 
     "verbose": True,
 

@@ -93,8 +93,6 @@ class MastermindAgent():
         # # Return a random guess
         # return actions
 
-    """ TODO: remove all code combinations which do not match the previous guess
-    https://github.com/NathanDuran/Mastermind-Five-Guess-Algorithm """
     """
     Version 1, works but not too well"""
     # def filter_codes(self, percepts):
@@ -155,6 +153,7 @@ class MastermindAgent():
     def eval_guess(self, guess, target):
         """ 
             STOLEN FROM mastermind.py, THANK YOU LECH!
+
             Evaluates a guess against a target
             :param guess: a R x C numpy array of valid colour characters that constitutes a guess
                     target: a R x C numpy array of valid colour characters that constitutes target solution
@@ -192,3 +191,14 @@ class MastermindAgent():
                     break
 
         return in_place, in_colour
+
+
+"""
+References:
+https://github.com/NathanDuran/Mastermind-Five-Guess-Algorithm 
+https://betterprogramming.pub/solving-mastermind-641411708d01
+chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/http://www.cs.uni.edu/~wallingf/teaching/cs3530/resources/knuth-mastermind.pdf
+
+
+
+"""
