@@ -40,6 +40,7 @@ class MastermindAgent():
         self.colours = colours
         self.num_guesses = num_guesses
         self.all_possible_codes = self.get_all_codes()
+        self.filtered_codes = self.all_possible_codes[:]
 
     def get_all_codes(self):
         return [''.join(code) for code in itertools.product(self.colours, repeat=self.code_length)]
@@ -80,13 +81,12 @@ class MastermindAgent():
 
             return initial_guess
         # Update the set of possible codes based on the hint feedback
-        possible_codes = self.filter_codes(
-            last_guess, in_place, in_color)
+        possible_codes = self.filter_codes(percepts)
 
         # Generate the next guess using Knuth's algorithm
         # next_guess = self.knuth_algorithm()
-
         # return next_guess
+        print("length of possible codes: ", len(possible_codes))
         if possible_codes:
             return list(random.choice(possible_codes))
         else:
@@ -108,17 +108,99 @@ class MastermindAgent():
 
     """ TODO: remove all code combinations which do not match the previous guess
     https://github.com/NathanDuran/Mastermind-Five-Guess-Algorithm """
+    """
+    Version 1, works but not too well"""
+    # def filter_codes(self, percepts):
+    #     print("FILTER CODES")
+    #     removed_codes = set()
+    #     filtered_codes = []
+    #     guess_counter, last_guess, in_place, in_color = percepts
 
-    def filter_codes(self, last_guess, in_place, in_color):
-        possible_codes = []
-        for code in self.all_possible_codes:
-            count_in_place = 0
-            count_in_color = 0
-            for i in range(self.code_length):
-                if last_guess[i] == code[i]:
-                    count_in_place += 1
-                elif last_guess[i] in code:
-                    count_in_color += 1
-            if count_in_place == in_place and count_in_color == in_color:
-                possible_codes.append(code)
-        return possible_codes
+    #     for code in self.all_possible_codes:
+    #         if code in removed_codes:  # Skip codes that have already been removed
+    #             continue
+
+    #         guess_in_place, guess_in_colour = self.eval_guess(
+    #             list(code), last_guess)
+    #         if guess_in_place == in_place and guess_in_colour == in_color:
+    #             filtered_codes.append(code)
+    #         else:
+    #             removed_codes.add(code)
+
+    #     return filtered_codes
+    """Version 2, works very well but only for first round"""
+    # def filter_codes(self, percepts):
+    #     guess_counter, last_guess, in_place, in_color = percepts
+    #     # A temporary list to store codes that match the hints
+    #     temp_filtered_codes = []
+
+    #     for code in self.filtered_codes:
+    #         guess_in_place, guess_in_colour = self.eval_guess(
+    #             list(code), last_guess)
+    #         if guess_in_place == in_place and guess_in_colour == in_color:
+    #             temp_filtered_codes.append(code)
+
+    #     # Update the filtered_codes attribute to the temporary list
+    #     self.filtered_codes = temp_filtered_codes
+
+    #     return self.filtered_codes
+    """Version 3, not very good"""
+
+    # def filter_codes(self, percepts):
+    #     guess_counter, last_guess, in_place, in_color = percepts
+    #     # A temporary list to store codes that match the hints
+    #     temp_filtered_codes = []
+    #     removed = set()
+
+    #     for code in self.filtered_codes:
+    #         if code in removed:
+    #             continue
+    #         guess_in_place, guess_in_colour = self.eval_guess(
+    #             list(code), last_guess)
+    #         if guess_in_place == in_place and guess_in_colour == in_color:
+    #             temp_filtered_codes.append(code)
+    #         else:
+    #             removed.add(code)
+
+    #     return temp_filtered_codes
+
+    def eval_guess(self, guess, target):
+        """ 
+            STOLEN FROM mastermind.py, THANK YOU LECH!
+            Evaluates a guess against a target
+            :param guess: a R x C numpy array of valid colour characters that constitutes a guess
+                    target: a R x C numpy array of valid colour characters that constitutes target solution
+            :return: a tuple of 4 vectors:
+                    R-dimensional vector that gives the number of correct colours in place in each row of the
+                                    guess against the target
+                    R-dimensional vector that gives the number of correct colours out of place in each row of the
+                                    guess against the target
+                    C-dimensional vector that gives the number of correct colours in place in each column of the
+                                    guess against the target
+                    C-dimensional vector that gives the number of correct colours out of place in each column of the
+                                    guess against the target
+
+          """
+        guess = np.reshape(guess, (-1))
+        target = np.reshape(target, (-1))
+
+        I = np.where(guess == target)[0]
+        in_place = len(I)
+        I = np.where(guess != target)[0]
+        state = np.zeros(np.shape(target))
+
+        in_colour = 0
+        for i in I:
+            a = target[i]
+            for j in I:
+                if state[j] != 0:
+                    continue
+
+                b = guess[j]
+
+                if a == b:
+                    in_colour += 1
+                    state[j] = -1
+                    break
+
+        return in_place, in_colour
