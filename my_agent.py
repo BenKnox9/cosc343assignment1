@@ -1,6 +1,6 @@
-__author__ = "<your name>"
+__author__ = "Ben Knox"
 __organization__ = "COSC343/AIML402, University of Otago"
-__email__ = "<your e-mail>"
+__email__ = "knobe957@student.otago.ac.nz"
 
 import itertools
 import numpy as np
@@ -11,9 +11,7 @@ class MastermindAgent():
     """
               A class that encapsulates the code dictating the
               behaviour of the agent playing the game of Mastermind.
-
               ...
-
               Attributes
               ----------
               code_length: int
@@ -22,7 +20,6 @@ class MastermindAgent():
                   a list of colours represented as characters
               num_guesses : int
                   the max. number of guesses per game
-
               Methods
               -------
               AgentFunction(percepts)
@@ -47,27 +44,20 @@ class MastermindAgent():
 
     def AgentFunction(self, percepts):
         """Returns the next board guess given state of the game in percepts
-
               :param percepts: a tuple of four items: guess_counter, last_guess, in_place, in_colour
-
                        , where
-
                        guess_counter - is an integer indicating how many guesses have been made, starting with 0 for
                                        initial guess;
-
                        last_guess - is a num_rows x num_cols structure with the copy of the previous guess
-
                        in_place - is the number of character in the last guess of correct colour and position
-
                        in_colour - is the number of characters in the last guess of correct colour but not in the
                                    correct position
-
               :return: list of chars - a list of code_length chars constituting the next guess
               """
 
         guess_counter, last_guess, in_place, in_color = percepts
 
-        # Ignore the first guess (no information provided)
+        # First guess is always 2 lots of each colour next to each other
         if guess_counter == 0:
             initial_guess = []
             idxI = 0
@@ -80,12 +70,9 @@ class MastermindAgent():
                 initial_guess.append(self.colours[idxI])
 
             return initial_guess
-        # Update the set of possible codes based on the hint feedback
+
         possible_codes = self.filter_codes(percepts)
 
-        # Generate the next guess using Knuth's algorithm
-        # next_guess = self.knuth_algorithm()
-        # return next_guess
         print("length of possible codes: ", len(possible_codes))
         if possible_codes:
             return list(random.choice(possible_codes))
@@ -144,25 +131,26 @@ class MastermindAgent():
     #     self.filtered_codes = temp_filtered_codes
 
     #     return self.filtered_codes
-    """Version 3, not very good"""
+    """Version 3, works"""
 
-    # def filter_codes(self, percepts):
-    #     guess_counter, last_guess, in_place, in_color = percepts
-    #     # A temporary list to store codes that match the hints
-    #     temp_filtered_codes = []
-    #     removed = set()
+    def filter_codes(self, percepts):
+        guess_counter, last_guess, in_place, in_color = percepts
+        # A temporary list to store codes that match the hints
+        if guess_counter == 1:
+            self.filtered_codes = self.all_possible_codes[:]
 
-    #     for code in self.filtered_codes:
-    #         if code in removed:
-    #             continue
-    #         guess_in_place, guess_in_colour = self.eval_guess(
-    #             list(code), last_guess)
-    #         if guess_in_place == in_place and guess_in_colour == in_color:
-    #             temp_filtered_codes.append(code)
-    #         else:
-    #             removed.add(code)
+        temp_filtered_codes = []
 
-    #     return temp_filtered_codes
+        for code in self.filtered_codes:
+            guess_in_place, guess_in_colour = self.eval_guess(
+                list(code), last_guess)
+            if guess_in_place == in_place and guess_in_colour == in_color:
+                temp_filtered_codes.append(code)
+
+        # Update the filtered_codes attribute to the temporary list
+        self.filtered_codes = temp_filtered_codes
+
+        return self.filtered_codes
 
     def eval_guess(self, guess, target):
         """ 
