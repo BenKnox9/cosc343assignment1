@@ -2,8 +2,6 @@ __author__ = "Ben Knox"
 __organization__ = "COSC343/AIML402, University of Otago"
 __email__ = "knobe957@student.otago.ac.nz"
 
-import collections
-import copy
 import itertools
 import numpy as np
 import random
@@ -39,8 +37,8 @@ class MastermindAgent():
         self.colours = colours
         self.num_guesses = num_guesses
         self.all_possible_codes = self.get_all_codes()
-        self.filtered_codes = copy.deepcopy(self.all_possible_codes)
-        self.Score_Dictionary = {}
+        self.filtered_codes = self.all_possible_codes[:]
+        self.knuth_codes = []
 
     def get_all_codes(self):
         return [''.join(code) for code in itertools.product(self.colours, repeat=self.code_length)]
@@ -74,14 +72,15 @@ class MastermindAgent():
 
             return initial_guess
 
+        self.knuth_codes.append(last_guess)
         possible_codes = self.filter_codes(percepts)
-
+        new_guess = self.mini_max(self.knuth_codes, possible_codes)
         print("length of possible codes: ", len(possible_codes))
-        if possible_codes:
-            answer = list(self.make_guess())
 
-            return answer
-            # return list(random.choice(possible_codes))
+        if new_guess:
+            return list(random.choice(new_guess))
+        elif possible_codes:
+            return list(random.choice(possible_codes))
         else:
             return list(random.choice(self.all_possible_codes))
         # Return the next guess from the filtered set of possible codes
@@ -102,6 +101,7 @@ class MastermindAgent():
     """
     Version 1, works but not too well"""
     # def filter_codes(self, percepts):
+    #     print("FILTER CODES")
     #     removed_codes = set()
     #     filtered_codes = []
     #     guess_counter, last_guess, in_place, in_color = percepts
@@ -149,7 +149,6 @@ class MastermindAgent():
                 list(code), last_guess)
             if guess_in_place == in_place and guess_in_colour == in_color:
                 temp_filtered_codes.append(code)
-                self.fill_dictionary(code, guess_in_colour, guess_in_place)
 
         # Update the filtered_codes attribute to the temporary list
         self.filtered_codes = temp_filtered_codes
@@ -198,56 +197,24 @@ class MastermindAgent():
 
         return in_place, in_colour
 
-    def fill_dictionary(self, guess, guess_in_colour, guess_in_place):
-        response = guess_in_colour, guess_in_place
-        if not self.Score_Dictionary:
-            self.Score_Dictionary[guess] = {response: 1}
-        else:
-            if guess in self.Score_Dictionary:
-                if response in self.Score_Dictionary[guess]:
-                    self.Score_Dictionary[guess][response] += 1
-                else:
-                    self.Score_Dictionary[guess][response] = 1
-            else:
-                self.Score_Dictionary[guess] = {response: 1}
+    def mini_max(self, knuth_codes, possible_codes):
+        scores = {}
+        print(len(possible_codes))
+        for code in possible_codes:
+            times_found = {}
+            for code_to_crack in knuth_codes:
+                feedback = self.eval_guess(code_to_crack, code)
+                feedback_str = str(feedback)
+                times_found[feedback_str] = times_found.get(
+                    feedback_str, 0) + 1
+            maximum = max(times_found.values())
+            scores[code] = maximum
 
-    def make_guess(self):
-        filtered_codes_copy = copy.deepcopy(self.filtered_codes)
-        guesses_to_try = []
-        considered_guesses = set()
+        minimum = min(scores.values())
+        guess_codes = [
+            code for code in possible_codes if scores[code] == minimum]
 
-        for guess, scores_by_answer_dict in self.Score_Dictionary.items():
-
-            scores_by_answer_dict = {answer: score for answer, score in
-                                     scores_by_answer_dict.items()
-                                     if guess in filtered_codes_copy}
-
-            self.Score_Dictionary[guess] = scores_by_answer_dict
-
-            if guess not in considered_guesses:
-
-                worst_response_score = self.compute_worst_response_score(
-                    scores_by_answer_dict)
-                guesses_to_try.append((worst_response_score, guess))
-                considered_guesses.add(guess)
-
-        min_worst_response_score, guess_to_return = min(guesses_to_try)
-
-        filtered_codes_copy.remove(guess_to_return)
-
-        return guess_to_return
-
-    def compute_worst_response_score(self, scores_by_answer_dict):
-        # print(scores_by_answer_dict)
-        possibilities_per_score = collections.Counter(
-            scores_by_answer_dict.values())
-
-        worst_case = max(possibilities_per_score.values())
-
-        worst_response_score = sum(
-            possibilities for score, possibilities in possibilities_per_score.items() if score >= worst_case)
-
-        return worst_response_score
+        return guess_codes
 
 
 """
