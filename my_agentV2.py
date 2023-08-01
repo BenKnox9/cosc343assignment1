@@ -209,6 +209,7 @@ class MastermindAgent():
                     feedback_str, 0) + 1
             maximum = max(times_found.values())
             scores[code] = maximum
+            print("scores")
 
         minimum = min(scores.values())
         guess_codes = [

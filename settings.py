@@ -7,7 +7,7 @@ __email__ = "lech.szymanski@otago.ac.nz"
 game_settings = {
 
     # name of the agent file (replace with my_agent.py when your agent is ready)
-    "agentFile": "my_agent_V2.py",
+    "agentFile": "my_agentV3.py",
 
     "codeLength": 5,              # length of the code to guess
 
@@ -15,7 +15,7 @@ game_settings = {
 
     "maxNumberOfGuesses": 6,     # max. number of guesses per game
 
-    "totalNumberOfGames": 5,    # total number of games played
+    "totalNumberOfGames": 20,    # total number of games played
 
     "verbose": True,
 
