@@ -142,32 +142,6 @@ class MastermindAgent():
         else:
             return list(random.choice(self.all_possible_codes))
 
-    # def minimax(self, possible_guesses):
-    #     """Returns a list of codes which could be potential next guesses based on the minimax technique
-    #         :param possible_guesses: a list of codes which are possible guesses returned from the filter_codes method
-    #         :return: list of possible codes
-    #         """
-    #     nextGuesses = []
-    #     min_score = float('inf')  # Initialize min_score to a large value
-
-    #     for guess in possible_guesses:
-    #         count_scores = {}  # Dictionary to count occurrences of each score
-    #         for code in self.all_possible_codes:
-    #             pegScore = self.eval_guess(list(guess), list(code))
-    #             pegScore_str = str(pegScore)
-    #             count_scores[pegScore_str] = count_scores.get(
-    #                 pegScore_str, 0) + 1
-
-    #         # Maximum count of the scores
-    #         max_count = max(count_scores.values())
-    #         if max_count < min_score:
-    #             min_score = max_count
-    #             nextGuesses = [guess]
-    #         elif max_count == min_score:
-    #             nextGuesses.append(guess)
-
-    #     return nextGuesses
-
     ''' V2 '''
     # def minimax(self, possible_guesses):
     #     all_possible_codes = self.get_all_codes()
