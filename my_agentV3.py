@@ -38,7 +38,7 @@ class MastermindAgent():
         self.num_guesses = num_guesses
         self.all_possible_codes = self.get_all_codes()
         self.filtered_codes = self.all_possible_codes[:]
-        self.initialDict = self.populateInitialDict()
+        self.next_guesses_cache = {}
 
     def get_all_codes(self):
         return [''.join(code) for code in itertools.product(self.colours, repeat=self.code_length)]
@@ -83,16 +83,20 @@ class MastermindAgent():
         if guess_counter == 0:
             return self.initialGuess()
 
-        # elif guess_counter == 1:
-        #     return 0
-
         possible_codes = self.filter_codes(percepts)
 
-        possible_guesses = self.minimax(possible_codes)
+        if guess_counter == 1:
+            possible_guesses = self.minimax_cached(
+                possible_codes, in_place, in_color)
+        else:
+            possible_guesses = self.minimax(possible_codes)
 
         return self.chooseNextGuess(possible_guesses, possible_codes)
 
     def initialGuess(self):
+        """Returns an initial guess, will be two of each colour so for a code of length 4, 'BBRR' and a code of length 5, 'BBRRG'
+              :return: Initial guess
+              """
         initial_guess = []
         idxI = 0
         for i in range(1, self.code_length // 2 + 1):
@@ -125,29 +129,35 @@ class MastermindAgent():
 
         # Update the filtered_codes attribute to the temporary list
         self.filtered_codes = temp_filtered_codes
-        print("finished filtering!!!!!!!!!!!")
 
         return self.filtered_codes
 
     def eval_guess(self, guess, target):
-        black_pegs = 0
-        white_pegs = 0
+        """Returns number of pegs in place and number of pegs in colour
+              :param guess: code which has been guessed
+                    target: code which the guess is being measured against
+
+              :return: in_place: number of items in the guess which were in place
+                      in_colour: number of items in the guess which were the right colour, not including ones which were in_place
+              """
+        in_place = 0
+        in_colour = 0
         guess_remaining = []
         target_remaining = []
 
         for i in range(self.code_length):
             if guess[i] == target[i]:
-                black_pegs += 1
+                in_place += 1
             else:
                 guess_remaining.append(guess[i])
                 target_remaining.append(target[i])
 
         for color in guess_remaining:
             if color in target_remaining:
-                white_pegs += 1
+                in_colour += 1
                 target_remaining.remove(color)
 
-        return black_pegs, white_pegs
+        return in_place, in_colour
 
     def chooseNextGuess(self, possible_guesses, possible_codes):
         """Returns a code chosen at random from the list of possible codes, excluding ones which were impossible based on the feedback given for the previous guess
@@ -172,29 +182,6 @@ class MastermindAgent():
         else:
             return list(random.choice(self.all_possible_codes))
 
-    ''' V2 '''
-    # def minimax(self, possible_guesses):
-    #     all_possible_codes = self.get_all_codes()
-    #     scores = {}
-
-    #     for guess in possible_guesses:
-    #         guess_score = 0
-    #         for code in all_possible_codes:
-    #             pegScore = self.eval_guess(list(guess), list(code))
-    #             pegScore_str = str(pegScore)
-    #             scores[guess] = scores.get(guess, {})
-    #             scores[guess][pegScore_str] = scores[guess].get(
-    #                 pegScore_str, 0) + 1
-
-    #         max_value = max(scores[guess].values())
-    #         guess_score = max_value
-    #         scores[guess] = guess_score
-
-    #     min_score = min(scores.values())
-    #     nextGuesses = [guess for guess,
-    #                    score in scores.items() if score == min_score]
-
-    #     return nextGuesses
     ''' ORIGINAL '''
 
     def minimax(self, possible_guesses):
@@ -229,6 +216,21 @@ class MastermindAgent():
             if value == min_value:
                 nextGuesses.append(key)
         return nextGuesses
+
+    def minimax_cached(self, possible_codes, in_place, in_colour):
+        """Returns a list of guesses which will be most effective based on the feedback previously received
+              :param possible_codes: The list of codes which are possible based on the feedback of the previous guesses
+                           in_place: number of items in the guess which were in place
+                          in_colour: number of items in the guess which were the right colour, not including ones which were in_place
+              :return: list of next guesses
+              """
+        feedback_str = str(in_place) + ", " + str(in_colour)
+        if feedback_str in self.next_guesses_cache:
+            return self.next_guesses_cache[feedback_str]
+        else:
+            next_guesses = self.minimax(possible_codes)
+            self.next_guesses_cache[feedback_str] = next_guesses
+            return next_guesses
 
 
 """
