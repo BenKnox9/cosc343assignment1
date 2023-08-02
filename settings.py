@@ -15,7 +15,7 @@ game_settings = {
 
     "maxNumberOfGuesses": 6,     # max. number of guesses per game
 
-    "totalNumberOfGames": 20,    # total number of games played
+    "totalNumberOfGames": 40,    # total number of games played
 
     "verbose": True,
 

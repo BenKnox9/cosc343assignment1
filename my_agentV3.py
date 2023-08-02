@@ -38,9 +38,32 @@ class MastermindAgent():
         self.num_guesses = num_guesses
         self.all_possible_codes = self.get_all_codes()
         self.filtered_codes = self.all_possible_codes[:]
+        self.initialDict = self.populateInitialDict()
 
     def get_all_codes(self):
         return [''.join(code) for code in itertools.product(self.colours, repeat=self.code_length)]
+
+    def populateInitialDict(self):
+        """Returns a list of codes which could be potential next guesses based on the minimax technique
+            :param possible_guesses: a list of codes which are possible guesses returned from the filter_codes method
+            :return: list of possible codes
+            """
+        initialDict = {}
+
+        initialGuess = self.initialGuess()
+
+        for code in self.all_possible_codes:
+
+            pegScore = self.eval_guess(code, initialGuess)
+            # print(" i:  ", i, '\n', "j:  ", j)
+            # print("pegscore:  ", pegScore)
+            pegScore_str = str(pegScore)
+            if pegScore_str in initialGuess:
+                initialDict[pegScore_str].append(code)
+            else:
+                initialDict[pegScore_str] = [code]
+
+        return initialDict
 
     def AgentFunction(self, percepts):
         """Returns the next board guess given state of the game in percepts
@@ -58,23 +81,29 @@ class MastermindAgent():
 
         # First guess is always 2 lots of each colour next to each other
         if guess_counter == 0:
-            initial_guess = []
-            idxI = 0
-            for i in range(1, self.code_length // 2 + 1):
-                initial_guess.extend([self.colours[i - 1]] * 2)
-                idxI = i
+            return self.initialGuess()
 
-        # If self.code_length is odd, add an extra element of the last color
-            if self.code_length % 2 != 0:
-                initial_guess.append(self.colours[idxI])
-
-            return initial_guess
+        # elif guess_counter == 1:
+        #     return 0
 
         possible_codes = self.filter_codes(percepts)
 
         possible_guesses = self.minimax(possible_codes)
 
         return self.chooseNextGuess(possible_guesses, possible_codes)
+
+    def initialGuess(self):
+        initial_guess = []
+        idxI = 0
+        for i in range(1, self.code_length // 2 + 1):
+            initial_guess.extend([self.colours[i - 1]] * 2)
+            idxI = i
+
+        # If self.code_length is odd, add an extra element of the last color
+        if self.code_length % 2 != 0:
+            initial_guess.append(self.colours[idxI])
+
+        return initial_guess
 
     def filter_codes(self, percepts):
         """Returns a list of codes, excluding ones which were impossible based on the feedback given for the previous guess
@@ -96,6 +125,7 @@ class MastermindAgent():
 
         # Update the filtered_codes attribute to the temporary list
         self.filtered_codes = temp_filtered_codes
+        print("finished filtering!!!!!!!!!!!")
 
         return self.filtered_codes
 
