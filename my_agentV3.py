@@ -41,6 +41,9 @@ class MastermindAgent():
         self.next_guesses_cache = {}
 
     def get_all_codes(self):
+        """Returns a list of all codes
+              :return: list of all codes
+              """
         return [''.join(code) for code in itertools.product(self.colours, repeat=self.code_length)]
 
     def AgentFunction(self, percepts):
@@ -74,11 +77,11 @@ class MastermindAgent():
 
     def initialGuess(self):
         """Returns an initial guess based on the code_length and available colors.
-        The initial guess will repeat each available color twice, and if code_length
-        is greater than the number of colors, it will append the last available color to the repeated pattern.
+            The initial guess will repeat each available color twice, and if code_length
+            is greater than the number of colors, it will append the last available color to the repeated pattern.
 
-        :return: Initial guess
-        """
+                :return: Initial guess
+            """
         initial_guess = []
         idxI = 0
         num_colors = len(self.colours)
@@ -179,8 +182,8 @@ class MastermindAgent():
 
     def minimax(self, possible_codes):
         """Returns a list of codes which could be potential next guesses based on the minimax technique
-            :param possible_codes: a list of codes which are possible guesses returned from the filter_codes method
-            :return: list of possible codes
+                :param possible_codes: a list of codes which are possible guesses returned from the filter_codes method
+                :return: list of possible codes
             """
         scoreCount = {}
         score = {}
