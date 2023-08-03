@@ -39,6 +39,7 @@ class MastermindAgent():
         self.all_possible_codes = self.get_all_codes()
         self.filtered_codes = self.all_possible_codes[:]
         self.next_guesses_cache = {}
+        self.all_guess_evals = {}
 
     def get_all_codes(self):
         """Returns a list of all codes
@@ -167,17 +168,19 @@ class MastermindAgent():
               """
         print("length of possible codes: ", len(possible_codes))
         print("length of possible guesses: ", len(possible_guesses))
+        # print("Possible codes: ", possible_codes)
+        # print("Possible guesses: ", possible_guesses)
 
         # Try and choose a code which is both a possible code, and has been recognised as a good guess
-        for i in possible_codes:
+        for i in possible_guesses:
             guess = i
-            if guess in possible_guesses:
+            if guess in possible_codes:
                 return list(guess)
 
         if possible_guesses:
-            return list(random.choice(possible_guesses))
+            return list(possible_guesses[0])
         if possible_codes:
-            return list(random.choice(possible_codes))
+            return list(possible_codes[0])
         return list(random.choice(self.all_possible_codes))
 
     def minimax(self, possible_codes):
@@ -190,9 +193,9 @@ class MastermindAgent():
 
         nextGuesses = []
 
-        # Evaluate remaining possible codes against every code.
-        for i in possible_codes:
-            for j in self.all_possible_codes:
+        # Evaluate every code against a target of all of the codes which are possible answers.
+        for i in self.all_possible_codes:
+            for j in possible_codes:
                 pegScore = self.eval_guess(list(i), list(j))
 
                 # For every set of feedback already stored as a key in the scoreCount dictionary, increment its value.
@@ -235,13 +238,28 @@ class MastermindAgent():
             self.next_guesses_cache[feedback_str] = next_guesses
             return next_guesses
 
+    def eval_guess_cached(self, guess, target):
+        """
+        This method would take up around 16GB of memory to cache every evaluation"""
+        # Used as the key in the dictionary
+        evalString = str(guess) + ", " + str(target)
+
+        # If this evaluation has already been computed, return the cached result
+        if evalString in self.all_guess_evals:
+            return self.all_guess_evals[evalString]
+
+        # Else compute the result and save it in the all_guess_evals dictionary
+        else:
+            score = self.eval_guess(guess, target)
+            self.all_guess_evals[evalString] = score
+            return score
+
 
 """
 References:
 https://github.com/NathanDuran/Mastermind-Five-Guess-Algorithm 
 https://betterprogramming.pub/solving-mastermind-641411708d01
 chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/http://www.cs.uni.edu/~wallingf/teaching/cs3530/resources/knuth-mastermind.pdf
-
 
 
 """
