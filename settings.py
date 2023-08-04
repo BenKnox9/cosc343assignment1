@@ -9,9 +9,9 @@ game_settings = {
     # name of the agent file (replace with my_agent.py when your agent is ready)
     "agentFile": "my_agentV3.py",
 
-    "codeLength": 5,              # length of the code to guess
+    "codeLength": 4,              # length of the code to guess
 
-    "numberOfColours": 6,         # number of colours (1-6)
+    "numberOfColours": 5,         # number of colours (1-6)
 
     "maxNumberOfGuesses": 6,     # max. number of guesses per game
 
@@ -20,6 +20,6 @@ game_settings = {
     "verbose": True,
 
     # seed for random choices of words in the game, None for random seed
-    # "seed": 75
+    "seed": 75
 
 }

@@ -106,28 +106,22 @@ class MastermindAgent():
         return initial_guess
 
     def filter_codes(self, percepts):
-        """Returns a list of codes, excluding ones which were impossible based on the feedback given for the previous guess
-              :param percepts: a tuple of four items: guess_counter, last_guess, in_place, in_colour
-              :return: list of possible codes
-              """
         guess_counter, last_guess, in_place, in_color = percepts
 
         if guess_counter == 1:
             self.filtered_codes = self.all_possible_codes[:]
 
-       # A temporary list to store codes that match the hints
-        temp_filtered_codes = []
+        # Convert codes and last_guess to NumPy arrays
+        codes_arr = np.array(self.filtered_codes)
+        last_guess_arr = np.array(last_guess)
 
-        # Compare the feedback received on the previous guess against the feedback of every code evaluated with that previous guess
-        # remove all codes who's feedback does not match
-        for code in self.filtered_codes:
-            guess_in_place, guess_in_colour = self.eval_guess(
-                list(code), last_guess)
-            if guess_in_place == in_place and guess_in_colour == in_color and code != last_guess:
-                temp_filtered_codes.append(code)
+        # Filter codes using boolean indexing
+        matching_codes = (
+            np.apply_along_axis(self.eval_guess, 1, codes_arr, last_guess_arr)
+            == np.array([in_place, in_color])
+        ).all(axis=1)
 
-        # Update the filtered_codes attribute to the temporary list
-        self.filtered_codes = temp_filtered_codes
+        self.filtered_codes = codes_arr[matching_codes].tolist()
 
         return self.filtered_codes
 
@@ -225,8 +219,7 @@ class MastermindAgent():
                           in_colour: number of items in the guess which were the right colour, not including ones which were in_place
               :return: list of next guesses
               """
-        feedback_str = str(in_place) + ", " + \
-            str(in_colour)  # Used as the key in the dictionary
+        feedback_str = in_place + in_colour  # Used as the key in the dictionary
 
         # If minimax has already been run for this set of feedback, return the cached dictionary
         if feedback_str in self.next_guesses_cache:
