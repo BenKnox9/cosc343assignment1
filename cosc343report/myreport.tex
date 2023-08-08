@@ -54,7 +54,7 @@ I found that this problem had been solved by Donald Knuth, who solved the master
 
 \section{Approach}
 
-For my solution, I use the same method Donald Knuth had used, but with different optimisations needed for faster running time. This method involves reducing the number of possible codes, as well as scoring each potential guess and choosing a guess which is likely to give us the most information. This guess may not always be a possible solution to the game based on the information received so far, but will guarantee a solution in the minimum moves possible.
+For my solution, I use the same method Donald Knuth had used, but with different optimisations needed for faster running time. This approach involves reducing the number of possible codes, as well as scoring each potential guess and choosing a guess which is likely to give us the most information. This guess may not always be a possible solution to the game based on the information received so far, but will guarantee a solution in the minimum moves possible.
 
 \section{Methods Used in This Approach}
  
@@ -167,6 +167,7 @@ code length & No. of colours & seed & no. of games & time & average no. guesses\
 \end{tabular}
 \caption{\label{tab:results2}Averages per 100 games}
 \end{table}
+With these optimizations, the average time for code length 5, and number of colours at 6 dropped from around 40 mins to an average of 7 mins and 26 seconds. As well as this, on testing the case with code length at 4 and number of colours at 5, the average time to run 100 games had dropped from around 23 seconds to around 4 seconds.
 
 Overall this agent performed well in terms of average number of guesses, however, when code length or number of colours is increased the time taken for this agent to run is nearing the acceptable limit. For any game settings beyond the scope of this assignment this agent may perform inefficiently. Despite this, the agent tested on random seeds, does perform within the expected time and guess constraints of the assignment.
 
