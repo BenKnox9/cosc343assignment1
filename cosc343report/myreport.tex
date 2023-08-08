@@ -17,6 +17,9 @@
 %
 % Adapted for AIML402 by:
 % Lech Szymanski (18/7/2022)
+%
+% Modified for COSC343 by:
+% Ben Knox (8/8/2023)
 
 
 \documentclass[12pt]{article}
@@ -27,11 +30,11 @@
 \papercode{COSC343}
 
 % Your project title (change appropriately for the assignment)
-\title{Assignment X report}
+\title{Assignment 1 report}
 
 % Your name
-\author{John \textsc{Smith}}
-\studentid{555555}
+\author{Ben \textsc{Knox}}
+\studentid{3938210}
 
 
 % Date, change the \today to a set date if you want to be precise
@@ -43,101 +46,165 @@
 \maketitle
 
 
-%\section{Introduction}
+\section{Introduction}
+ 
+The aim of this assignment was to create an agent to solve the mastermind game in 5 guesses or less, while performing in a reasonable time. The mastermind game is a game where generally there are 4 slots and you must guess each colour in each slot correctly. Once a guess is made, for example 'BBRR' feedback is returned in the form of coloured pegs. A black peg means that there is a correct colour in the correct place, and a white peg means there is a correct colour in the incorrect place. For example if the hidden code was 'BGGB' and our guess as before was 'BBRR', The feedback received would be 1 black peg, and 1 white peg. 
 
-Introduce the assignment and what it is about.  For example, the purpose of this document is to provide a template for your report with examples of commonly used \LaTeX{} commands and features.  You don't need to repeat all the details of the information provided in the assignment description.  The purpose of this is just to provide some context for everything that follows.   
+I found that this problem had been solved by Donald Knuth, who solved the mastermind game in guaranteed 5 moves, for the game set up with a code length of 4, and with 5 possible colours to guess from. In our case the settings of the game were not so rigid, and test cases had to be considered for games with a code length up to 5, and possible colours up to 6.  
 
-\section{Main body}
+\section{Approach}
 
-You probably don't want to call this section ``Main body"...but it's essentially what you need to do next --  report on the work you've done for your assignment: the approach, results, analysis, and anything else that was asked for in the assignment specification.  
+For my solution, I use the same method Donald Knuth had used, but with different optimisations needed for faster running time. This method involves reducing the number of possible codes, as well as scoring each potential guess and choosing a guess which is likely to give us the most information. This guess may not always be a possible solution to the game based on the information received so far, but will guarantee a solution in the minimum moves possible.
 
-You can use the \verb$\section{}$ and \verb$\subsection{}$ commands to organise your document - either break the main body into multiple sections, or have it as a one section with subsections.   \LaTeX{} handles all the formatting and numbering automatically. Use the \verb$\ref{}$ and \verb$\label{}$ commands for cross-references.  
+\section{Methods Used in This Approach}
+ 
+\subsection{Initial guess}
+My approach was initially to look into the work of Donald Knuth, I found a general explanation of his method which can be found here \cite{mastermind wikipedia}, in the section 'Worst case: Five-guess algorithm'. From here I began with the initial guess, as per Knuths' paper \cite{Knuths Paper}, he chooses an initial guess for a game with code length 4 of '1122'. In his paper Knuth explains this guess is necessary in achieving 5 moves or less with this method. From here I started with a hard coded initial guess of 'BBRR' the colour equivalent of '1122'. 
 
-\subsection{Citing}
-
-You might want to cite some sources of your information.  For instance, a reference for \LaTeX{} can be found here \cite{latexcompanion}.
-
-\subsection{How to compile \LaTeX{}}
-
-\LaTeX{} documents are prepared using markup language and need to be compiled to produce pdfs.  
-
-%The easiest way is to use the \href{https://www.overleaf.com}{Overleaf service} - it's free for private projects.  Create an account and once you login you can create different projects (essentially different documents).  After clicking on ``New Project" select ``Upload project" and upload the \textit{cosc343report.zip} file where this file came from.  The template will open on the website and you'll be able to write your report through your browser, compile LaTeX online and have it saved on a remote server.  Later you just download the final pdf and submit as your report.    
-
-%Alternately, you can install LaTeX compiler on your machine and compile the .tex file yourself.  On macOS you need to download and install \href{http://www.tug.org/mactex/downloading.html}{MacTeX}.  Then, using a program like \href{http://pages.uoregon.edu/koch/texshop/}{TexShop} (free), or \href{https://www.texpad.com/}{Texpad} (awesome, but not free) you can edit and compile a .tex file into a .pdf.
+\subsection{Evaluating Each Guess}
+Upon making a guess in the mastermind game, the opponent player will evaluate this guess and return feedback in the form of black and white pegs. In order to score guesses without actually making them, an evaluate guess method was needed. This method would compare a guess and a target and return the black and white pegs based on these two codes. 
 
 
-\subsection{Tables and Figures}
+\subsection{Pruning/Filtering}
+The first obvious step of slimming down the number of possible codes is to remove any code that has been guessed from the total set of all possible guesses. Then, with the help of a question answered on stack overflow \cite{stack overflow pruning}, The set of possible guesses can further be slimmed down significantly based on the feedback received from each guess. 
 
-Use the table and tabular commands for basic tables --- see Table~\ref{tab:widgets}, for example. You can include a figure (JPEG, PNG or PDF) with the \verb$\includegraphics$ command as in the code for Figure~\ref{fig:frog} below.
+Firstly, we make an initial guess of 'BBRR', which gives feedback of say 2 black pegs, and 1 white peg. From here, we can remove from the set of all possible codes, any code which when compared to our previous guess 'BBRR' does not give feedback of 2 black and 1 white. 
 
-% Commands to include a figure:
-\begin{figure}
+\subsection{Minimax}
+The general idea for this method is that it return a list of codes which are possible next guesses. 
+
+The minimax function works as follows:
+For each possible solution, the agent calculates the maximum number of remaining possibilities that could result from using a certain guess. Any guess that then has the minimum of this maximum number of possibilities is then added to the next guesses list. So even in the worst case, the guess will provide a large amount information.
+
+
+% \begin{enumerate}
+% \item For every code in the game \footnote{every code in the game = Every possilble code that can be made with the out of the given colours and code length.}, evaluate that code with every possible code \footnote{every possible code = The list of codes which has had any impossible codes filtered out.}, which will give you feedback of certain black and white pegs. 
+% \item Count how many times each unique set of feedback is received.
+% \item For this code, get the max of those counts, and save the code and count as key and value respectively in a dictionary.
+% \item Do this for every code in the game. Get the minimum value from that set of values.
+% \item Find any code which had this minimum as its value and add that code to the list of next guesses
+% \item Return next guesses
+% \end{enumerate}
+
+Because the minimax function gives a score to each code in the game\footnote{every code in the game = Every possible code that can be made with the given colours and code length.}, and not to each code possible at this point\footnote{each code possible at this point = The list of codes which has had any impossible codes filtered out.}, some of the codes in next guesses may not be possible answers to the game, hence the implementation of a choose next guess method.
+
+\subsection{Choose Next Guess}
+Some codes in the next guesses list which is returned from the minimax function are not actually a possible solution to the game at that time. In the choose next guess method we prefer to choose a next guess which is a possible solution because this gives a chance of completing the game in that move. However sometimes the best guess will not be a guess which is a possible solution. We still prefer this guess to any code in the list of possible codes because even if a guess may not give the correct solution in this turn, it will give the agent the most information, allowing it to guess correctly in the next turn. 
+
+\section{Initial Results}
+After Implementing these things, the agent could play the mastermind game while scoring an average of 4.132 guesses. This can be seen below in table~\ref{tab:results1}, which shows every row being an average of 100 games.
+
+\begin{table}[htbp]
 \centering
-\includegraphics[width=0.4\textwidth]{figures/frog.jpg}
-\caption{\label{fig:frog}This is a figure caption.}
-\end{figure}
-
-\begin{table}
-\centering
-\begin{tabular}{l|r}
-Item & Quantity \\\hline
-Widgets & 42 \\
-Gadgets & 13
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+code length & No. of colours & seed & no. of games & time (s) & average no. guesses\\\hline
+4 & 5 & None & 100 & 25 & 4.1\\
+4 & 5 & None & 100 & 24 & 4.1\\
+4 & 5 & None & 100 & 24 & 4.16\\
+4 & 5 & None & 100 & 24 & 4.12\\
+4 & 5 & None & 100 & 22 & 4.09\\
+4 & 5 & None & 100 & 22 & 4.12\\
+4 & 5 & None & 100 & 23 & 4.13\\
+4 & 5 & None & 100 & 24 & 4.19\\
+4 & 5 & None & 100 & 21 & 4.18\\
+4 & 5 & None & 100 & 28 & 4.13\\
+\hline
+\multicolumn{4}{|c|}{Averages: } & 23.7s & 4.132\\
+\hline
 \end{tabular}
-\caption{\label{tab:widgets}An example table.}
+\caption{\label{tab:results1}Averages per 100 games}
 \end{table}
 
-\subsection{Mathematics}
+For the game settings of code length 4, and number of colours 5, this worked well. However when moving on to code length of 5 and number of colours 6, it was clear that this either needs significant optimisation or a new solution would need to be found. When trying to run at these new settings expected time to complete for 100 games was anywhere from 30 - 45 minutes, significantly exceeding the goal of 10 minutes.
 
-\LaTeX{} is great at typesetting mathematics. Let $X_1, X_2, \ldots, X_n$ be a sequence of independent and identically distributed random variables with $\text{E}[X_i] = \mu$ and $\text{Var}[X_i] = \sigma^2 < \infty$, and let
-$$S_n = \frac{X_1 + X_2 + \cdots + X_n}{n}
-      = \frac{1}{n}\sum_{i}^{n} X_i$$
-denote their mean. Then as $n$ approaches infinity, the random variables $\sqrt{n}(S_n - \mu)$ converge in distribution to a normal $\mathcal{N}(0, \sigma^2)$.
+\section{Optimization}
+\subsection{A General Initial Guess}
+It was clear that with the number of different code length and colour combinations, some way to generate an effective initial guess was needed. What I chose somewhat leaned on the work of Knuth for his initial guess in the algorithm for code length 4. I determined my initial guess to be 2 of each colour until the code length is reached, with certain checks which will alter this pattern if say there is not enough colours to fill this pattern with respect to the chosen code length.
 
-\subsection{Lists}
+% This is how I determined my initial guess:
 
-You can make lists with automatic numbering \dots
+% \begin{enumerate}
+% \item Initial code will be two of each colour until code length is reached, or exceeds number of colours 
+% \item If code length is odd, add an extra element of the next color
+% \item While code length is greater than the length of the initial code, append another of the last colour used.
+% \end{enumerate}
 
-\begin{enumerate}
-\item Like this,
-\item and this
-\end{enumerate}
-\dots or bullet points \dots
-\begin{itemize}
-\item Like this,
-\item and this
-\end{itemize}
+\subsection{Memoization}
+The problem with my current implementation, for larger code lengths and number of colours, was that large amounts of time spent in the minimax method, especially for the first guess. 
+
+My initial thought was to save the result of every call to the evaluate guess method, so save every code combination with the feedback that it would return. This proved to use an extremely large amount of memory and was not going to be the best option for optimizing this code.
+
+My second implementation came from the idea that it was a specific point in each game that was taking a long time, the minimax method called after the first guess. I realised that since the initial guess was always the same, any feedback received after this initial guess would provide you with an identical list of possible codes. Given the list of possible codes is the same, the result of the minimax method would also be the same. So, after the first guess for every round, the feedback from the first round is saved as a key, while the list of next guesses returned from the minimax method is saved as the value to this key. 
+
+So, every time the agent sees a new combination of feedback after the initial guess, the list of next guesses is saved in a dictionary for use whenever the same feedback is given after that initial guess. 
+
+\section{Results}
+After these optimisations my agent was able to successfully achieve an average score of 4.868 over 1000 games and average time taken of 7 minutes and 26 seconds, for the game settings of code length 5, and colours 6. As shown below in table~\ref{tab:results2}
+
+
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+code length & No. of colours & seed & no. of games & time & average no. guesses\\\hline
+5 & 6 & None & 100 & 6min, 4s & 4.75\\
+5 & 6 & None & 100 & 8min, 41s & 4.85\\
+5 & 6 & None & 100 & 6min, 44s & 4.92\\
+5 & 6 & None & 100 & 8min, 3s & 4.98\\
+5 & 6 & None & 100 & 8min, 6s & 4.88\\
+5 & 6 & None & 100 & 7min, 8s & 4.76\\
+5 & 6 & None & 100 & 6min, 47s & 4.85\\
+5 & 6 & None & 100 & 6min, 57s & 4.87\\
+5 & 6 & None & 100 & 7min, 35s & 4.86\\
+5 & 6 & None & 100 & 8min, 23s & 4.96\\
+\hline
+\multicolumn{4}{|c|}{Averages: } & 7min, 26s & 4.868\\
+\hline
+\end{tabular}
+\caption{\label{tab:results2}Averages per 100 games}
+\end{table}
+
+Overall this agent performed well in terms of average number of guesses, however, when code length or number of colours is increased the time taken for this agent to run is nearing the acceptable limit. For any game settings beyond the scope of this assignment this agent may perform inefficiently. Despite this, the agent tested on random seeds, does perform within the expected time and guess constraints of the assignment.
+
+Important to note that the more games run in succession, the faster the average time for each game due to the memoization implemented. A result for each possible key is generally stored within the first few minutes of the agent running. After all of these results are stored for use, each game can run at an average of 2 or 3 seconds.
+
 
 \section{Conclusion}
+I have learned a lot during this assignment, including the use of python dictionaries which I used to store cached results from the minimax method. As well this I struggled through learning how the minimax method operates. Although I have not implemented minimax recursively I believe I am now well equipped to use minimax with ease in another project.
 
-Concluding remarks.  It could be a brief summary and/or comments on what you have learned/enjoyed/struggled with.      Depending on the space taken up by figures and formatting the report (excluding the Appendix) should be somewhere in the range of 3-5 pages.  Remember, it's not about creative space-wasting to hit the 4 pages, but about reporting on your work and results, so I can tell how much you have done and learned.  
-
-
-%The environment \thebibliography produces a list of references; such list will be titled "References". A parameter inside braces, 3 in the example, indicates the number of entries to be added; this parameter can not be greater than 99.
-
-%To create a bibliography entry the command \bibitem is used. A parameter inside braces is set to label this entry and can later be used as identifier for this reference. After the closing brace the text with the name of the author, the book title, publisher and so on is entered. 
-
-%Any choice of citation style is acceptable as long as you are consistent.
+I also believe that my choice in optimisation for the minimax method is a well balanced optimisation which accounts for both space and time complexity while still achieving the goal of this assignment.
 
 \begin{thebibliography}{3}
 
-\bibitem{latexcompanion} 
-Michel Goossens, Frank Mittelbach, and Alexander Samarin. \textit{The \LaTeX\ Companion}. Addison-Wesley, Reading, Massachusetts, 1993.
+\bibitem{mastermind wikipedia} 
+Wikipedia. \textit{Mastermind}
+\href{https://en.wikipedia.org/wiki/Mastermind_(board_game)}
+{Mastermind}
+
+\bibitem{Knuths Paper} 
+Donald E. Knuth. \textit{The Computer as Master Mind}. J Recreational Mathematics, Vol 9(1), 1976-77
+\href{https://www.cs.uni.edu/~wallingf/teaching/cs3530/resources/knuth-mastermind.pdf}{The Computer as Master Mind}
+
+\bibitem{stack overflow pruning} 
+Unknown. \textit{Donald Knuth Algorithm Mastermind}. Stack Overflow
+\href{https://stackoverflow.com/questions/62430071/donald-knuth-algorithm-mastermind}{Donald Knuth Algorithm Mastermind}
 
 \end{thebibliography}
 
 
 % Activate the appendix
 % from now on sections are numerated with capital letters
-\appendix
+% \appendix
 
-\renewcommand{\thesection}{Appendix \Alph{section}}
+% \renewcommand{\thesection}{Appendix \Alph{section}}
 
-\section{Some extra things}
+% \section{Some extra things}
 
-If you have anything more to add you might want to add it to the appendix.  For instance, some details could detract from readability if placed in the main body of the report, but might still be needed in the appendix for completeness and/or reference.  You don't need to have an appendix if you don't think you need one.
+% If you have anything more to add you might want to add it to the appendix.  For instance, some details could detract from readability if placed in the main body of the report, but might still be needed in the appendix for completeness and/or reference.  You don't need to have an appendix if you don't think you need one.
 
-\textbf{Do not stick code in the appendix} - any code should be submitted as a separate file (.py file for Python code).  
+% \textbf{Do not stick code in the appendix} - any code should be submitted as a separate file (.py file for Python code).  
 
 
 \end{document}
