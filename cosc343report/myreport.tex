@@ -48,7 +48,7 @@
 
 \section{Introduction}
  
-The aim of this assignment was to create an agent to solve the mastermind game in 5 guesses or less, while performing in a reasonable time. The mastermind game is a game where generally there are 4 slots and you must guess each colour in each slot correctly. Once a guess is made, for example 'BBRR' feedback is returned in the form of coloured pegs. A black peg means that there is a correct colour in the correct place, and a white peg means there is a correct colour in the incorrect place. For example if the hidden code was 'BGGB' and our guess as before was 'BBRR', The feedback received would be 1 black peg, and 1 white peg. 
+The aim of this assignment was to create an agent to solve the mastermind game in 5 guesses or less, while performing in a reasonable time. The mastermind game is a game where generally there are 4 slots and you must guess each colour in each slot correctly. Once a guess is made, for example 'BBRR' feedback is returned in the form of coloured pegs. A black peg means that there is a correct colour in the correct place, and a white peg means there is a correct colour in the incorrect place. For example if the hidden code was 'BGGB' and our guess is 'BBRR', The feedback received would be 1 black peg, and 1 white peg. 
 
 I found that this problem had been solved by Donald Knuth, who solved the mastermind game in guaranteed 5 moves, for the game set up with a code length of 4, and with 5 possible colours to guess from. In our case the settings of the game were not so rigid, and test cases had to be considered for games with a code length up to 5, and possible colours up to 6.  
 
@@ -59,19 +59,19 @@ For my solution, I use the same method Donald Knuth had used, but with different
 \section{Methods Used in This Approach}
  
 \subsection{Initial guess}
-My approach was initially to look into the work of Donald Knuth, I found a general explanation of his method which can be found here \cite{mastermind wikipedia}, in the section 'Worst case: Five-guess algorithm'. From here I began with the initial guess, as per Knuths' paper \cite{Knuths Paper}, he chooses an initial guess for a game with code length 4 of '1122'. In his paper Knuth explains this guess is necessary in achieving 5 moves or less with this method. From here I started with a hard coded initial guess of 'BBRR' the colour equivalent of '1122'. 
+My approach was initially to look into the work of Donald Knuth, I found a general explanation of his method here \cite{mastermind wikipedia}, in the section 'Worst case: Five-guess algorithm'. From here I began with the initial guess, as per Knuths' paper \cite{Knuths Paper}, he chooses an initial guess for a game with code length 4 of '1122'. In his paper Knuth explains this guess is necessary in achieving 5 moves or less with this method. From here I started with a hard coded initial guess of 'BBRR' the colour equivalent of '1122'. 
 
 \subsection{Evaluating Each Guess}
 Upon making a guess in the mastermind game, the opponent player will evaluate this guess and return feedback in the form of black and white pegs. In order to score guesses without actually making them, an evaluate guess method was needed. This method would compare a guess and a target and return the black and white pegs based on these two codes. 
 
 
 \subsection{Pruning/Filtering}
-The first obvious step of slimming down the number of possible codes is to remove any code that has been guessed from the total set of all possible guesses. Then, with the help of a question answered on stack overflow \cite{stack overflow pruning}, The set of possible guesses can further be slimmed down significantly based on the feedback received from each guess. 
+The first obvious step of slimming down the number of possible codes is to remove any code that has been guessed from the total set of all possible codes. Then, with the help of a question answered on stack overflow \cite{stack overflow pruning}, The set of possible codes can further be slimmed down significantly based on the feedback received from each guess. 
 
 Firstly, we make an initial guess of 'BBRR', which gives feedback of say 2 black pegs, and 1 white peg. From here, we can remove from the set of all possible codes, any code which when compared to our previous guess 'BBRR' does not give feedback of 2 black and 1 white. 
 
 \subsection{Minimax}
-The general idea for this method is that it return a list of codes which are possible next guesses. 
+The general idea for this method is that it returns a list of codes which are possible next guesses. 
 
 The minimax function works as follows:
 For each possible solution, the agent calculates the maximum number of remaining possibilities that could result from using a certain guess. Any guess that then has the minimum of this maximum number of possibilities is then added to the next guesses list. So even in the worst case, the guess will provide a large amount information.
@@ -86,13 +86,13 @@ For each possible solution, the agent calculates the maximum number of remaining
 % \item Return next guesses
 % \end{enumerate}
 
-Because the minimax function gives a score to each code in the game\footnote{every code in the game = Every possible code that can be made with the given colours and code length.}, and not to each code possible at this point\footnote{each code possible at this point = The list of codes which has had any impossible codes filtered out.}, some of the codes in next guesses may not be possible answers to the game, hence the implementation of a choose next guess method.
+Because the minimax function gives a score to each code in the game\footnote{Each code in the game = Every possible code that can be made with the given colours and code length.}, and not to each code possible at this point\footnote{Each code possible at this point = The list of codes which has had any impossible codes filtered out.}, some of the codes in next guesses may not be possible answers to the game, hence the implementation of a choose next guess method.
 
 \subsection{Choose Next Guess}
 Some codes in the next guesses list which is returned from the minimax function are not actually a possible solution to the game at that time. In the choose next guess method we prefer to choose a next guess which is a possible solution because this gives a chance of completing the game in that move. However sometimes the best guess will not be a guess which is a possible solution. We still prefer this guess to any code in the list of possible codes because even if a guess may not give the correct solution in this turn, it will give the agent the most information, allowing it to guess correctly in the next turn. 
 
 \section{Initial Results}
-After Implementing these things, the agent could play the mastermind game while scoring an average of 4.132 guesses. This can be seen below in table~\ref{tab:results1}, which shows every row being an average of 100 games.
+After Implementing these things, the agent could play the mastermind game while scoring an average of 4.132 guesses. This can be seen below in table~\ref{tab:results1}, which shows every row as an average of 100 games.
 
 \begin{table}[htbp]
 \centering
@@ -116,7 +116,7 @@ code length & No. of colours & seed & no. of games & time (s) & average no. gues
 \caption{\label{tab:results1}Averages per 100 games}
 \end{table}
 
-For the game settings of code length 4, and number of colours 5, this worked well. However when moving on to code length of 5 and number of colours 6, it was clear that this either needs significant optimisation or a new solution would need to be found. When trying to run at these new settings expected time to complete for 100 games was anywhere from 30 - 45 minutes, significantly exceeding the goal of 10 minutes.
+For the game settings of code length 4, and number of colours 5, this worked well. However when moving on to code length of 5 and number of colours 6, it was clear that this either needs significant optimisation or a new solution would need to be found. When trying to run at these new settings, time to complete 100 games was anywhere from 30 - 45 minutes, significantly exceeding the goal of 10 minutes.
 
 \section{Optimization}
 \subsection{A General Initial Guess}
@@ -131,13 +131,15 @@ It was clear that with the number of different code length and colour combinatio
 % \end{enumerate}
 
 \subsection{Memoization}
-The problem with my current implementation, for larger code lengths and number of colours, was that large amounts of time spent in the minimax method, especially for the first guess. 
+The problem with my current implementation, for larger code lengths and number of colours, was that large amounts of time was spent in the minimax method, especially for the first guess. 
 
-My initial thought was to save the result of every call to the evaluate guess method, so save every code combination with the feedback that it would return. This proved to use an extremely large amount of memory and was not going to be the best option for optimizing this code.
+My initial thought was to save the result of every call to the evaluate guess method, so save every code combination with the feedback that it would return. This proved to use more memory than I was happy with, and was not going to be the best option for optimizing this code.
 
-My second implementation came from the idea that it was a specific point in each game that was taking a long time, the minimax method called after the first guess. I realised that since the initial guess was always the same, any feedback received after this initial guess would provide you with an identical list of possible codes. Given the list of possible codes is the same, the result of the minimax method would also be the same. So, after the first guess for every round, the feedback from the first round is saved as a key, while the list of next guesses returned from the minimax method is saved as the value to this key. 
+My second idea looked into the fact that there was an obvious bottle neck, the minimax method called after the first guess. The inefficiencies only really appeared after the first guess because no pruning to the list of possible codes had been done at this point. All subsequent guesses are almost instant regardless of saving their results.
 
-So, every time the agent sees a new combination of feedback after the initial guess, the list of next guesses is saved in a dictionary for use whenever the same feedback is given after that initial guess. 
+I realised that since the initial guess was always the same, any feedback received after this initial guess would provide you with an identical list of possible codes. Given the list of possible codes is the same, the result of the minimax method would also be the identical, and would directly relate to the feedback of the first guess. So, after the first guess for every round, the feedback is saved as a key, while the list of next guesses returned from the minimax method is saved as the value to this key. 
+
+So, every time the agent sees a new combination of feedback after the initial guess, the list of next guesses is saved in a dictionary for use in following rounds. 
 
 \section{Results}
 After these optimisations my agent was able to successfully achieve an average score of 4.868 over 1000 games and average time taken of 7 minutes and 26 seconds, for the game settings of code length 5, and colours 6. As shown below in table~\ref{tab:results2}
@@ -172,7 +174,7 @@ Important to note that the more games run in succession, the faster the average 
 
 
 \section{Conclusion}
-I have learned a lot during this assignment, including the use of python dictionaries which I used to store cached results from the minimax method. As well this I struggled through learning how the minimax method operates. Although I have not implemented minimax recursively I believe I am now well equipped to use minimax with ease in another project.
+I have learned a lot during this assignment, including the use of python dictionaries to store cached results. As well this I struggled through learning how the minimax method operates. Although I have not implemented minimax recursively, I believe the knowledge I gained when learning this function means I am now well equipped to use minimax with ease in another project.
 
 I also believe that my choice in optimisation for the minimax method is a well balanced optimisation which accounts for both space and time complexity while still achieving the goal of this assignment.
 
