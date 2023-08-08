@@ -2,10 +2,7 @@ __author__ = "Ben Knox"
 __organization__ = "COSC343/AIML402, University of Otago"
 __email__ = "knobe957@student.otago.ac.nz"
 
-import collections
-import copy
 import itertools
-import numpy as np
 import random
 
 
@@ -39,10 +36,13 @@ class MastermindAgent():
         self.colours = colours
         self.num_guesses = num_guesses
         self.all_possible_codes = self.get_all_codes()
-        self.filtered_codes = copy.deepcopy(self.all_possible_codes)
-        self.Score_Dictionary = {}
+        self.filtered_codes = self.all_possible_codes[:]
+        self.next_guesses_cache = {}
 
     def get_all_codes(self):
+        """Returns a list of all codes
+              :return: list of all codes
+              """
         return [''.join(code) for code in itertools.product(self.colours, repeat=self.code_length)]
 
     def AgentFunction(self, percepts):
@@ -57,99 +57,72 @@ class MastermindAgent():
                                    correct position
               :return: list of chars - a list of code_length chars constituting the next guess
               """
-
         guess_counter, last_guess, in_place, in_color = percepts
 
         # First guess is always 2 lots of each colour next to each other
         if guess_counter == 0:
-            initial_guess = []
-            idxI = 0
-            for i in range(1, self.code_length // 2 + 1):
-                initial_guess.extend([self.colours[i - 1]] * 2)
-                idxI = i
-
-        # If self.code_length is odd, add an extra element of the last color
-            if self.code_length % 2 != 0:
-                initial_guess.append(self.colours[idxI])
-
-            return initial_guess
+            return self.initialGuess()
 
         possible_codes = self.filter_codes(percepts)
 
-        print("length of possible codes: ", len(possible_codes))
-        if possible_codes:
-            answer = list(self.make_guess())
-
-            return answer
-            # return list(random.choice(possible_codes))
+        # At this point the previous guess will always be the same, so minimax method results can be cached
+        if guess_counter == 1:
+            possible_guesses = self.minimax_cached(
+                possible_codes, in_place, in_color)
         else:
-            return list(random.choice(self.all_possible_codes))
-        # Return the next guess from the filtered set of possible codes
-        # if possible_codes:
-        #     return list(random.choice(possible_codes))
-        # else:
-        #     return list(random.choice(self.all_possible_codes))
-        # # Extract different parts of percepts.
-        # guess_counter, last_guess, in_place, in_colour = percepts
+            possible_guesses = self.minimax(possible_codes)
 
-        # # Create an list of colour caracters.   Currently all the guesses are the first colour,
-        # # 'B' - probably good idea to replace this logic with a better guess
-        # actions = [self.colours[0]]*self.code_length
+        return self.chooseNextGuess(possible_guesses, possible_codes)
 
-        # # Return a random guess
-        # return actions
+    def initialGuess(self):
+        """Returns an initial guess based on the code_length and available colors.
+            The initial guess will repeat each available color twice, and if code_length
+            is greater than the number of colors, it will append the last available color to the repeated pattern.
 
-    """
-    Version 1, works but not too well"""
-    # def filter_codes(self, percepts):
-    #     removed_codes = set()
-    #     filtered_codes = []
-    #     guess_counter, last_guess, in_place, in_color = percepts
+                :return: Initial guess
+            """
+        initial_guess = []
+        idxI = 0
+        num_colors = len(self.colours)
 
-    #     for code in self.all_possible_codes:
-    #         if code in removed_codes:  # Skip codes that have already been removed
-    #             continue
+        # Initial code will be two of each colour until code_length is reached, or exceeds num_colours
+        for i in range(1, min(self.code_length // 2 + 1, num_colors + 1)):
+            initial_guess.extend([self.colours[i - 1]] * 2)
+            idxI = i
 
-    #         guess_in_place, guess_in_colour = self.eval_guess(
-    #             list(code), last_guess)
-    #         if guess_in_place == in_place and guess_in_colour == in_color:
-    #             filtered_codes.append(code)
-    #         else:
-    #             removed_codes.add(code)
+        # If code_length is odd, add an extra element of the next color
+        if self.code_length % 2 != 0 and num_colors > 0:
+            if idxI < num_colors:
+                initial_guess.append(self.colours[idxI])
+            else:
+                initial_guess.append(self.colours[num_colors - 1])
 
-    #     return filtered_codes
-    """Version 2, works very well but only for first round"""
-    # def filter_codes(self, percepts):
-    #     guess_counter, last_guess, in_place, in_color = percepts
-    #     # A temporary list to store codes that match the hints
-    #     temp_filtered_codes = []
+        # If code_length is greater than the length of the initial guess, append the last available color
+        while len(initial_guess) < self.code_length and num_colors > 0:
+            initial_guess.append(self.colours[num_colors - 1])
 
-    #     for code in self.filtered_codes:
-    #         guess_in_place, guess_in_colour = self.eval_guess(
-    #             list(code), last_guess)
-    #         if guess_in_place == in_place and guess_in_colour == in_color:
-    #             temp_filtered_codes.append(code)
-
-    #     # Update the filtered_codes attribute to the temporary list
-    #     self.filtered_codes = temp_filtered_codes
-
-    #     return self.filtered_codes
-    """Version 3, works"""
+        return initial_guess
 
     def filter_codes(self, percepts):
+        """Returns a list of codes, excluding ones which were impossible based on the feedback given for the previous guess
+              :param percepts: a tuple of four items: guess_counter, last_guess, in_place, in_colour
+              :return: list of possible codes
+              """
         guess_counter, last_guess, in_place, in_color = percepts
-        # A temporary list to store codes that match the hints
+
         if guess_counter == 1:
             self.filtered_codes = self.all_possible_codes[:]
 
+       # A temporary list to store codes that match the hints
         temp_filtered_codes = []
 
+        # Compare the feedback received on the previous guess against the feedback of every code evaluated with that previous guess
+        # remove all codes who's feedback does not match
         for code in self.filtered_codes:
             guess_in_place, guess_in_colour = self.eval_guess(
                 list(code), last_guess)
-            if guess_in_place == in_place and guess_in_colour == in_color:
+            if guess_in_place == in_place and guess_in_colour == in_color and code != last_guess:
                 temp_filtered_codes.append(code)
-                self.fill_dictionary(code, guess_in_colour, guess_in_place)
 
         # Update the filtered_codes attribute to the temporary list
         self.filtered_codes = temp_filtered_codes
@@ -157,105 +130,108 @@ class MastermindAgent():
         return self.filtered_codes
 
     def eval_guess(self, guess, target):
-        """ 
-            STOLEN FROM mastermind.py, THANK YOU LECH!
+        """Returns number of pegs in place and number of pegs in colour
+              :param guess: code which has been guessed
+                    target: code which the guess is being measured against
 
-            Evaluates a guess against a target
-            :param guess: a R x C numpy array of valid colour characters that constitutes a guess
-                    target: a R x C numpy array of valid colour characters that constitutes target solution
-            :return: a tuple of 4 vectors:
-                    R-dimensional vector that gives the number of correct colours in place in each row of the
-                                    guess against the target
-                    R-dimensional vector that gives the number of correct colours out of place in each row of the
-                                    guess against the target
-                    C-dimensional vector that gives the number of correct colours in place in each column of the
-                                    guess against the target
-                    C-dimensional vector that gives the number of correct colours out of place in each column of the
-                                    guess against the target
-
-          """
-        guess = np.reshape(guess, (-1))
-        target = np.reshape(target, (-1))
-
-        I = np.where(guess == target)[0]
-        in_place = len(I)
-        I = np.where(guess != target)[0]
-        state = np.zeros(np.shape(target))
-
+              :return: in_place: number of items in the guess which were in place
+                      in_colour: number of items in the guess which were the right colour, not including ones which were in_place
+              """
+        in_place = 0
         in_colour = 0
-        for i in I:
-            a = target[i]
-            for j in I:
-                if state[j] != 0:
-                    continue
+        guess_remaining = []
+        target_remaining = []
 
-                b = guess[j]
+        # Check for in_place
+        for i in range(self.code_length):
+            if guess[i] == target[i]:
+                in_place += 1
+            else:
+                guess_remaining.append(guess[i])
+                target_remaining.append(target[i])
 
-                if a == b:
-                    in_colour += 1
-                    state[j] = -1
-                    break
+        # Check for in_colour
+        for color in guess_remaining:
+            if color in target_remaining:
+                in_colour += 1
+                target_remaining.remove(color)
 
         return in_place, in_colour
 
-    def fill_dictionary(self, guess, guess_in_colour, guess_in_place):
-        response = guess_in_colour, guess_in_place
-        if not self.Score_Dictionary:
-            self.Score_Dictionary[guess] = {response: 1}
-        else:
-            if guess in self.Score_Dictionary:
-                if response in self.Score_Dictionary[guess]:
-                    self.Score_Dictionary[guess][response] += 1
+    def chooseNextGuess(self, possible_guesses, possible_codes):
+        """Returns a code chosen at random from the list of possible codes, excluding ones which were impossible based on the feedback given for the previous guess
+              :param possible_guesses: a list of codes which are possible guesses returned from the filter_codes method
+                       possible_codes: a list of codes which will be most effective based on the feedback previously received
+              :return: The code chosen for the next guess
+              """
+        # print("length of possible codes: ", len(possible_codes))
+        # print("length of possible guesses: ", len(possible_guesses))
+        # print("Possible codes: ", possible_codes)
+        # print("Possible guesses: ", possible_guesses)
+
+        # Try and choose a code which is both a possible code, and has been recognised as a good guess
+        for i in possible_guesses:
+            guess = i
+            if guess in possible_codes:
+                return list(guess)
+
+        if possible_guesses:
+            return list(possible_guesses[0])
+        if possible_codes:
+            return list(possible_codes[0])
+        return list(random.choice(self.all_possible_codes))
+
+    def minimax(self, possible_codes):
+        """Returns a list of codes which could be potential next guesses based on the minimax technique
+                :param possible_codes: a list of codes which are possible guesses returned from the filter_codes method
+                :return: list of possible codes
+            """
+        scoreCount = {}
+        score = {}
+
+        nextGuesses = []
+
+        # Evaluate every code against a target of all of the codes which are possible answers.
+        for i in self.all_possible_codes:
+            for j in possible_codes:
+                pegScore = self.eval_guess(list(i), list(j))
+
+                # For every set of feedback already stored as a key in the scoreCount dictionary, increment its value.
+                pegScore_str = str(pegScore)
+                if pegScore_str in scoreCount:
+                    scoreCount[pegScore_str] += 1
+                # Otherwise add that feedback as a key, with a value of 1
                 else:
-                    self.Score_Dictionary[guess][response] = 1
-            else:
-                self.Score_Dictionary[guess] = {response: 1}
+                    scoreCount[pegScore_str] = 1
 
-    def make_guess(self):
-        filtered_codes_copy = copy.deepcopy(self.filtered_codes)
-        guesses_to_try = []
-        considered_guesses = set()
+            max_value = max(scoreCount.values())  # the score of each code i
+            score[i] = max_value
+            scoreCount.clear()
 
-        for guess, scores_by_answer_dict in self.Score_Dictionary.items():
+        # Choose the group with the smallest max value
+        min_value = min(score.values())
 
-            scores_by_answer_dict = {answer: score for answer, score in
-                                     scores_by_answer_dict.items()
-                                     if guess in filtered_codes_copy}
+        for key, value in score.items():
+            if value == min_value:
+                nextGuesses.append(key)
+        return nextGuesses
 
-            self.Score_Dictionary[guess] = scores_by_answer_dict
+    def minimax_cached(self, possible_codes, in_place, in_colour):
+        """Returns a list of guesses which will be most effective based on the feedback previously received
+              :param possible_codes: The list of codes which are possible based on the feedback of the previous guesses
+                           in_place: number of items in the guess which were in place
+                          in_colour: number of items in the guess which were the right colour, not including ones which were in_place
+              :return: list of next guesses
+              """
+        feedback_str = str(in_place) + ", " + \
+            str(in_colour)  # Used as the key in the dictionary
 
-            if guess not in considered_guesses:
+        # If minimax has already been run for this set of feedback, return the cached dictionary
+        if feedback_str in self.next_guesses_cache:
+            return self.next_guesses_cache[feedback_str]
 
-                worst_response_score = self.compute_worst_response_score(
-                    scores_by_answer_dict)
-                guesses_to_try.append((worst_response_score, guess))
-                considered_guesses.add(guess)
-
-        min_worst_response_score, guess_to_return = min(guesses_to_try)
-
-        filtered_codes_copy.remove(guess_to_return)
-
-        return guess_to_return
-
-    def compute_worst_response_score(self, scores_by_answer_dict):
-        # print(scores_by_answer_dict)
-        possibilities_per_score = collections.Counter(
-            scores_by_answer_dict.values())
-
-        worst_case = max(possibilities_per_score.values())
-
-        worst_response_score = sum(
-            possibilities for score, possibilities in possibilities_per_score.items() if score >= worst_case)
-
-        return worst_response_score
-
-
-"""
-References:
-https://github.com/NathanDuran/Mastermind-Five-Guess-Algorithm 
-https://betterprogramming.pub/solving-mastermind-641411708d01
-chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/http://www.cs.uni.edu/~wallingf/teaching/cs3530/resources/knuth-mastermind.pdf
-
-
-
-"""
+        # Else compute next_guesses and save it in the next_guesses_cache dictionary
+        else:
+            next_guesses = self.minimax(possible_codes)
+            self.next_guesses_cache[feedback_str] = next_guesses
+            return next_guesses
