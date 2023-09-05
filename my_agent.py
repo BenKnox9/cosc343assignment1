@@ -59,7 +59,7 @@ class MastermindAgent():
               """
         guess_counter, last_guess, in_place, in_color = percepts
 
-        # First guess is always 2 lots of each colour next to each other
+        # First guess is always 2 of each colour next to each other
         if guess_counter == 0:
             return self.initialGuess()
 
